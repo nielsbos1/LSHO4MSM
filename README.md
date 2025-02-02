@@ -139,6 +139,16 @@ LSHO4MSM/
 - Seed generation and management for hash functions
 - Maintains consistency in random number generation
 
+## Custom Datasketch Implementation
+
+The `datasketch_custom_implementation/` directory contains custom extensions to the Python datasketch package, implementing novel LSH techniques and optimizations:
+
+### Key Components
+
+- `fill_sketch.py`: Implementation of FillSketch, an alternative sketching algorithm that uses a different approach for signature generation than traditional MinHash
+- `lsh_amplified.py`: Two-stage LSH implementation that amplifies accuracy through cascaded filtering
+- `mixed_tab.py`: Efficient mixed tabulation hashing implementation for faster hash computations
+
 ## Configuration
 
 The project uses several configuration files:
