@@ -1,10 +1,43 @@
-from ..datasketch_niels import datasketch
+"""
+LSH Utilities Module
+
+This module provides utility functions for Locality Sensitive Hashing (LSH) operations,
+including sketch generation, candidate pair filtering, and performance metric calculations.
+
+The module implements both MinHash and Fill Sketch Scheme (FSS) functionality, with
+support for both standard and amplified LSH schemes.
+
+Functions:
+    add_sketches: Generate MinHash and FSS sketches for product data
+    get_pair_quality: Calculate pair quality metrics for candidate pairs
+    apply_lsh_generate_candidate_pairs: Generate candidate pairs using LSH
+    filter_candidate_pairs_brands_and_shops: Filter candidate pairs based on brand and shop
+    get_duplicates_found: Find actual duplicates among candidate pairs
+    get_duplicates_found_pairwise: Find pairwise duplicates in candidate pairs
+    get_total_possible_comparisions: Calculate total possible comparisons
+    extract_all_model_words: Extract unique model words from data
+    add_error_info_to_param_list: Add error metrics to parameter configurations
+
+"""
+from src.datasketch_custom_implementation import datasketch
 import copy
 from optimize_parameters import compute_weighted_average_error
 import pandas as pd
 
 
 def add_sketches(data, seed_gen, num_perm=256, mixed_tab=False):
+    """
+    Generate MinHash and Fill Sketch Scheme (FSS) sketches for product data.
+
+    Args:
+        data (dict): Dictionary of products with model words
+        seed_gen: Seed generator object for reproducible results
+        num_perm (int, optional): Number of permutations. Defaults to 256.
+        mixed_tab (bool, optional): Whether to use mixed tabulation. Defaults to False.
+
+    Returns:
+        dict: Products with added MinHash and FSS sketches
+    """
     return_dict = dict()
     # generate MinHash
     count = 0
@@ -37,18 +70,19 @@ def add_sketches(data, seed_gen, num_perm=256, mixed_tab=False):
 
     return return_dict
 
-
-def get_seeds():
-    with open("seeds.txt", "r") as file_:
-        lines = file_.readlines()
-    output_list = []
-    for line in lines:
-        output_list.append(int(line))
-
-    return output_list
-
-
 def get_pair_quality(candidate_pairs, data):
+    """
+    Calculate the pair quality metric for candidate pairs.
+    
+    Pair quality is defined as the percentage of candidate pairs that are actual duplicates.
+
+    Args:
+        candidate_pairs (set): Set of candidate duplicate pairs
+        data (dict): Dictionary of product data
+
+    Returns:
+        float: Pair quality percentage (0-100)
+    """
     duplicates = []
 
     for cp in candidate_pairs:
@@ -74,6 +108,22 @@ def apply_lsh_generate_candidate_pairs(
     parameter_config_list=None,
     minimum_r1=1,
 ):
+    """
+    Generate candidate pairs using LSH with specified parameters.
+
+    Args:
+        data_with_sketches (dict): Product data with LSH sketches
+        threshold (float): LSH threshold value
+        params (tuple, optional): LSH parameters (b, r)
+        num_perm (int, optional): Number of permutations
+        amplified (bool, optional): Whether to use amplification
+        sketch_type (str, optional): Type of sketch to use ('minhash' or 'fss')
+        parameter_config_list (list, optional): List of parameter configurations
+        minimum_r1 (int, optional): Minimum r1 value. Defaults to 1.
+
+    Returns:
+        set: Set of candidate pairs
+    """
     lsh = datasketch.MinHashLSHAmplified(
         threshold=threshold,
         num_perm=num_perm,
@@ -88,6 +138,18 @@ def apply_lsh_generate_candidate_pairs(
 
 
 def filter_candidate_pairs_brands_and_shops(candidate_pairs, data_with_sketches):
+    """
+    Filter candidate pairs based on brand and shop criteria.
+    
+    Keeps only pairs that have the same brand but are from different shops.
+
+    Args:
+        candidate_pairs (set): Set of candidate pairs
+        data_with_sketches (dict): Product data with sketches
+
+    Returns:
+        set: Filtered set of candidate pairs
+    """
     # for each candidate pair, check whether they have the same brand and are from different shops
     output_set = set()
     for cp in candidate_pairs:
@@ -102,6 +164,20 @@ def filter_candidate_pairs_brands_and_shops(candidate_pairs, data_with_sketches)
 
 
 def get_duplicates_found(candidate_pairs, duplicates):
+    """
+    Find actual duplicates among candidate pairs, supporting multi-item duplicate sets.
+
+    This function checks candidate pairs against known duplicate sets and identifies
+    which candidate pairs are actual duplicates. It supports cases where duplicate
+    sets can contain more than two items.
+
+    Args:
+        candidate_pairs (set): Set of candidate duplicate pairs
+        duplicates (list): List of sets containing known duplicate groups
+
+    Returns:
+        set: Set of confirmed duplicate pairs found among candidate pairs
+    """
     duplicates_found = set()
     for cp in candidate_pairs:
         duplicate = next((cp for x in duplicates if cp.issubset(x)), "not found")
@@ -111,6 +187,20 @@ def get_duplicates_found(candidate_pairs, duplicates):
 
 
 def get_duplicates_found_pairwise(candidate_pairs, duplicates_no_triples_quadruples):
+    """
+    Find actual duplicates among candidate pairs, for pairwise duplicates only.
+    
+    This function is optimized for cases where all duplicates are pairs
+    (no groups of three or more duplicates). It's more efficient than get_duplicates_found
+    for pairwise comparison.
+
+    Args:
+        candidate_pairs (set): Set of candidate duplicate pairs
+        duplicates_no_triples_quadruples (list): List of known duplicate pairs
+
+    Returns:
+        set: Set of confirmed duplicate pairs found among candidate pairs
+    """
     duplicates_found = set()
     for cp in candidate_pairs:
         if cp in duplicates_no_triples_quadruples:
@@ -119,6 +209,17 @@ def get_duplicates_found_pairwise(candidate_pairs, duplicates_no_triples_quadrup
 
 
 def get_total_possible_comparisions(data):
+    """
+    Calculate total possible comparisons between products.
+    
+    Only counts pairs from different shops with the same brand.
+
+    Args:
+        data (dict): Product data dictionary
+
+    Returns:
+        int: Total number of possible comparisons
+    """
     count = 0
     for index, product in data.items():
         for index_2, product_2 in data.items():
@@ -128,6 +229,15 @@ def get_total_possible_comparisions(data):
 
 
 def extract_all_model_words(data):
+    """
+    Extract all unique model words from product data.
+
+    Args:
+        data (dict): Product data dictionary
+
+    Returns:
+        set: Set of unique model words
+    """
     model_words = set()
     for key, product in data.items():
         model_words.update(product["model_words"])
@@ -135,6 +245,18 @@ def extract_all_model_words(data):
 
 
 def add_error_info_to_param_list(param_config_list):
+    """
+    Add error information to parameter configurations.
+    
+    Calculates false positive rate, false negative rate, and weighted average error
+    for each parameter configuration.
+
+    Args:
+        param_config_list (list): List of parameter configurations
+
+    Returns:
+        pandas.DataFrame: Parameter configurations with added error metrics
+    """
     list_storage = []
     for element in param_config_list:
         copy_el = copy.deepcopy(element)

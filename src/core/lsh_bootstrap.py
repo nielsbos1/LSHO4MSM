@@ -1,3 +1,19 @@
+"""
+LSH Bootstrap Analysis Module
+
+This module implements bootstrap analysis for evaluating LSH performance.
+It provides functionality for:
+- Performing bootstrap sampling of product data
+- Evaluating LSH performance metrics
+- Comparing different LSH schemes
+- Generating statistical performance reports
+
+Key Parameters:
+    num_perm (int): Number of permutations for LSH
+    iterations (int): Number of bootstrap iterations
+    sample_ratio (float): Ratio of data to sample (default: 2/3)
+
+"""
 import json
 import logging
 import sys
@@ -90,13 +106,12 @@ def bootstrap(num_perm, iterations, sample_ratio=2 / 3):
         df_results["reduction_ratio"] = df_results["no_candidate_pairs"].apply(
             lambda x: (no_possible_comparisons - x) / no_possible_comparisons
         )
-        # df_results['f1'] = df_results.apply(lambda x: (2 * x['pair_quality'] * x['pair_completeness'] / 10000)/(x['pair_quality'] / 100 + x['pair_completeness']/100), axis =1)
         df_results["amplified_x_sketch_type"] = df_results.apply(
             lambda x: ("amplified" if x["amplified"] else "not amplified") + " - " + x["sketch_type"], axis=1
         )
         list_df.append(df_results)
     bootstrap_results = pd.concat(list_df)
-    bootstrap_results.to_excel(f"bootstrap_v2_{iterations}_n_{num_perm}.xlsx")
+    bootstrap_results.to_excel(f"bootstrap_{iterations}_n_{num_perm}.xlsx")
     return list_df
 
 

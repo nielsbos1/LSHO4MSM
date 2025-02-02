@@ -2,6 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.10.6-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
 Code for Locality Sensitive Hashing Optimization for MSM
 
 ## Project overview
@@ -61,6 +62,23 @@ This project contains a custom Python dependency that depends on certain C binar
 
 ## Project structure
 
+LSHO4MSM/
+├── data/                  # Data directory for input files
+├── figures/               # Directory for generated figures and plots
+├── results/               # Results and output files
+├── src/                   # Source code directory
+│   ├── analysis/          # Analysis modules
+│   ├── core/              # Core LSH implementation
+│   ├── datasketch_niels/  # Custom datasketch implementation based on datasketch Python package
+│   ├── utils/             # Utility functions and helpers
+│   └── visualization/     # Visualization and plotting modules
+├── .gitignore             # Git ignore file
+├── .python-version        # Python version specification
+├── config.toml            # Configuration file
+├── pyproject.toml         # Project metadata and dependencies
+├── README.md              # Project documentation
+└── uv.lock                # Lock file for uv package manager
+
 ### Core Modules
 
 #### core/data_preprocessor.py
@@ -79,13 +97,11 @@ This project contains a custom Python dependency that depends on certain C binar
 
 - Utility functions for LSH operations
 - Sketch generation and candidate pair filtering
-- Performance metric calculations
 
 #### core/optimize_parameters.py
 
 - Parameter optimization for LSH schemes
 - Error probability calculations
-- Configuration management for different thresholds
 
 ### Analysis
 
@@ -124,14 +140,18 @@ This project contains a custom Python dependency that depends on certain C binar
 ## Configuration
 
 The project uses several configuration files:
+
 - `config.toml`: Main configuration file for LSH parameters and brand names
 - `pyproject.toml`: Project metadata and dependencies
 - `seeds.txt`: Seed values for reproducible results
 
 ## Troubleshooting
+
 Common issues and solutions:
 
 ### C Compiler Issues
+
 If you encounter C compiler errors:
+
 1. Ensure MinGW-w64 is properly installed
 2. Add MinGW-w64 to your system PATH

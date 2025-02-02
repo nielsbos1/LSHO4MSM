@@ -2,10 +2,20 @@
 """
 Created on Thu Jul 14 12:33:53 2022
 
+Data Preprocessing Module for LSH-based Entity Resolution
+
+This module handles the preprocessing of product data for LSH-based matching.
+It includes functionality for:
+- Loading and transforming JSON product data
+- Cleaning and standardizing product information
+- Extracting model words using regex patterns
+- Identifying and managing duplicate products
+- Brand extraction and validation
+
 @author: Niels
 """
 import json
-from src.datasketch_niels import datasketch
+from src.datasketch_custom_implementation import datasketch
 from tomlkit import load as toml_load
 import re
 import logging
@@ -25,7 +35,15 @@ logger = logging.getLogger("minhash")
 
 
 def load_data(file_loc):
-    # Load Data
+    """
+    Load product data from a JSON file.
+
+    Args:
+        file_loc (str): Path to the JSON file
+
+    Returns:
+        dict: Loaded JSON data
+    """
     with open(file_loc, "r") as file_:
         data = json.load(file_)
     return data
@@ -33,16 +51,18 @@ def load_data(file_loc):
 
 def transform_data(data):
     """
-    This function transforms the original data input into a list of products
+    Transform product data by adding UUIDs and creating both list and dictionary outputs.
 
+    This function processes the input data by:
+    1. Generating unique IDs for each product
+    2. Creating a list representation for iteration
+    3. Creating a dictionary representation for quick lookups
 
-    Parameters
-    ----------
-    data : input data
-    Returns
-    -------
-    None.
+    Args:
+        data (dict): Input data with model IDs as keys and product lists as values
 
+    Returns:
+        tuple: (list of products, dictionary of products by UUID)
     """
     list_output = []
     dict_output = {}
@@ -57,6 +77,19 @@ def transform_data(data):
 
 
 def clean_data(data, matches):
+    """
+    Clean product data by standardizing text formats.
+
+    Performs text cleaning on both product titles and feature maps using
+    a dictionary of correct forms and their alternatives.
+
+    Args:
+        data (dict): Dictionary of products indexed by UUID
+        matches (dict): Dictionary mapping correct forms to lists of alternatives
+
+    Returns:
+        dict: Cleaned product data
+    """
     logger.info("cleaning data inputs")
     return_dict = {}
     for uuid, product in data.items():
@@ -75,11 +108,34 @@ def clean_data(data, matches):
 
 
 def tuple_model_words_to_list(model_words_regex_result):
+    """
+    Convert regex match tuples to list of model words.
+
+    Args:
+        model_words_regex_result (list): List of regex match tuples
+
+    Returns:
+        list: Extracted model words
+    """
     result = [x[0] for x in model_words_regex_result]
     return result
 
 
 def extract_model_words(data):
+    """
+    Extract model words from product titles and feature maps.
+
+    Uses regex patterns to identify model identifiers in product information:
+    - Words containing both letters and numbers
+    - Numeric values with optional units
+    - Filtered to remove the actual model ID
+
+    Args:
+        data (dict): Dictionary of products
+
+    Returns:
+        dict: Products with added model_words sets
+    """
     logger.info("extracting model words using regex expressions")
     # Find all model words
     regex_title = re.compile(r"([a-zA-Z0-9]*(([0-9]+[^0-9, ]+)|([^0-9, ]+[0-9]+))[a-zA-Z0-9]*)")
@@ -91,13 +147,10 @@ def extract_model_words(data):
             model_words = tuple_model_words_to_list(regex_title.findall(product["title"]))
             for key, value in product["featuresMap"].items():
                 model_words_values = tuple_model_words_to_list(regex_KVP.findall(value))
-                # if len(model_words) > 0:
-                #     print(f'model_words: {model_words}')
 
                 # Extract non-numerical part of model word
                 model_words_numerical = [re.sub(pattern=r"[a-zA-Z]+", repl="", string=x) for x in model_words_values]
-                # if len(model_words) > 0:
-                #     print(f'model_words: {model_words_numerical}')
+
                 model_words.extend(model_words_numerical)
 
             model_words_filtered = [mw for mw in model_words if mw != model_id]
@@ -110,8 +163,21 @@ def extract_model_words(data):
 
 
 def extract_tv_brands(data, tv_brands):
-    # to do
-    # goes wrong when extracting something from key-value pair that is not a brand -> see misidentified
+    """
+    Extract TV brands from product information.
+
+    Attempts to identify brands through:
+    1. Title matching using regex
+    2. Feature map value matching
+    Tracks brand statistics and potential misidentifications
+
+    Args:
+        data (dict): Dictionary of products
+        tv_brands (list): List of valid TV brand names
+
+    Returns:
+        tuple: (products with brands, unbranded products, brand statistics, misidentified pairs)
+    """
     logger.info("extracting tv brand from product information")
     total_products = len(data)
     count = 0
@@ -166,6 +232,15 @@ def extract_tv_brands(data, tv_brands):
 
 
 def get_model_id_to_uuid(data):
+    """
+    Create mapping from model IDs to product UUIDs.
+
+    Args:
+        data (list): List of products
+
+    Returns:
+        defaultdict: Dictionary mapping model IDs to sets of product UUIDs
+    """
     duplicates_dict = defaultdict(set)
     for product in data:
         duplicates_dict[product["modelID"]].add(product["uuid"])
@@ -173,8 +248,24 @@ def get_model_id_to_uuid(data):
 
 
 def data_cleaning_pipeline(file_loc):
+    """
+    Complete data preprocessing pipeline.
+
+    This function orchestrates the entire preprocessing workflow:
+    1. Load raw data
+    2. Transform data structure
+    3. Identify duplicates
+    4. Clean text data
+    5. Extract brands
+    6. Extract model words
+
+    Args:
+        file_loc (str): Path to input JSON file
+
+    Returns:
+        tuple: (preprocessed product data, list of duplicate pairs)
+    """
     data = load_data(file_loc)
-    # duplicates = { prod: data[prod] for prod in data if len(data[prod]) > 1}
 
     # load config
     with open("config.toml") as file_:
@@ -207,19 +298,3 @@ def data_cleaning_pipeline(file_loc):
     # extract model words
     data_with_model_words = extract_model_words(data_with_tv_brands)
     return data_with_model_words, duplicates_no_triples_quadruples
-
-
-if __name__ == "__main__":
-    file_loc = "./data/TVs-all-merged.json"
-
-    list_df = []
-    for i in range(4):
-        df_copy = df_brands.iloc[i * 10 : (i + 1) * 10, :]
-        df_copy.columns = [f"brand_{i}", f"occ_{i}"]
-        df_copy.reset_index(drop=True, inplace=True)
-        print(df_copy)
-        list_df.append(df_copy)
-
-    df_latex = pd.concat(list_df, axis=1)
-
-    df_latex.to_latex()
