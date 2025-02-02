@@ -1,10 +1,26 @@
 # LSHO4MSM
 
+![Python Version](https://img.shields.io/badge/python-3.10.6-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 Code for Locality Sensitive Hashing Optimization for MSM
 
 ## Project overview
 
 This project implements and evaluates Locality Sensitive Hashing (LSH) optimization techniques. It includes implementations of MinHash and Fill Sketch Scheme (FSS) algorithms, along with tools for parameter optimization and performance evaluation.
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/nielsbos1/LSHO4MSM
+cd lsho4msm
+
+# Create and activate environment
+uv sync
+
+# Run a sample analysis
+uv run python -m src.core.lsh_bootstrap
+```
 
 ## Installation
 
@@ -104,3 +120,18 @@ This project contains a custom Python dependency that depends on certain C binar
 
 - Seed generation and management for hash functions
 - Maintains consistency in random number generation
+
+## Configuration
+
+The project uses several configuration files:
+- `config.toml`: Main configuration file for LSH parameters and brand names
+- `pyproject.toml`: Project metadata and dependencies
+- `seeds.txt`: Seed values for reproducible results
+
+## Troubleshooting
+Common issues and solutions:
+
+### C Compiler Issues
+If you encounter C compiler errors:
+1. Ensure MinGW-w64 is properly installed
+2. Add MinGW-w64 to your system PATH
