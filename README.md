@@ -62,6 +62,7 @@ This project contains a custom Python dependency that depends on certain C binar
 
 ## Project structure
 
+```bash
 LSHO4MSM/
 ├── data/                  # Data directory for input files
 ├── figures/               # Directory for generated figures and plots
@@ -78,6 +79,7 @@ LSHO4MSM/
 ├── pyproject.toml         # Project metadata and dependencies
 ├── README.md              # Project documentation
 └── uv.lock                # Lock file for uv package manager
+```
 
 ### Core Modules
 
