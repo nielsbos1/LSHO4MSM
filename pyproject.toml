@@ -1,0 +1,22 @@
+[project]
+name = "lsho4msm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.10.6"
+dependencies = [
+    "black>=25.1.0",
+    "brokenaxes>=0.6.2",
+    "jinja2>=3.1.5",
+    "matplotlib>=3.10.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.2.3",
+    "scipy>=1.15.1",
+    "sympy>=1.13.3",
+    "tomlkit>=0.13.2",
+    "tqdm>=4.67.1",
+]
+
+
+[tool.black]
+line-length = 120  # You can change this number to your preferred line length
