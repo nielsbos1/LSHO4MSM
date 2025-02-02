@@ -1,3 +1,14 @@
+"""
+FillSketch is a novel variant of MinHash that uses a different approach to generate 
+hash values and compute similarities. This implementation extends the core datasketch 
+package by introducing an alternative sketching method.
+
+The key features include:
+- Uses mixed tabulation hashing for faster hash generation
+- Custom similarity estimation approach
+- Support for both standard and mixed tabulation-based hashing
+"""
+
 import os
 
 os.add_dll_directory("C:\\msys64\\mingw64\\bin")
@@ -16,6 +27,25 @@ _hash_range = 1 << 32
 
 
 class FillSketch(object):
+    """
+    FillSketch implementation for similarity estimation.
+    
+    Args:
+        input (set): The input set to be sketched
+        sketch_length (int, optional): Length of the sketch. Defaults to 128.
+        seeds (list, optional): Seeds for hash functions. Defaults to [1, 2].
+        hashfunc (callable, optional): Hash function to use. Defaults to SHA1.
+        mixedtab_objects (list, optional): Pre-initialized mixed tabulation objects.
+        mixed_tab (bool, optional): Whether to use mixed tabulation hashing.
+
+    Attributes:
+        input: The input set
+        mixed_tab: Whether mixed tabulation hashing is being used
+        sketch_length: Length of the sketch
+        hashfunc: Hash function being used
+        hash_outputs: Cached hash values for input elements
+        hashvalues: The final sketch values
+    """
     def __init__(
         self, input, sketch_length=128, seeds=[1, 2], hashfunc=sha1_hash32, mixedtab_objects=None, mixed_tab=True
     ):
@@ -30,13 +60,6 @@ class FillSketch(object):
         self.list_seeds = None
         self.input = input
         self.mixed_tab = True if mixedtab_objects or mixed_tab else False
-        # if self.mixed_tab:
-        #     if mixedtab_objects:
-        #         self.mixedtab_objects = mixedtab_objects
-        #     else:
-        #         self.mixedtab_objects = []
-        #         for t in range(sketch_length):
-        #             self.mixedtab_objects.append(pyhashniels.PyMixTab())
         if self.mixed_tab:
             if mixedtab_objects:
                 self.mixedtab_object = mixedtab_objects
@@ -64,23 +87,26 @@ class FillSketch(object):
                 if i < sketch_length:
                     bin_value = int(self.hash_outputs[input]["bins"][i])
                     v_value = i + self.hash_outputs[input]["values"][i]
-                    # if print_:
-                    #     print(f"b_{i}({input})={bin_value}, v_{i}({input}) = {v_value}")
                 else:
                     bin_value = i - sketch_length
                     v_value = i + self.hash_outputs[input]["values"][i]
-                    # if print_:
-                    #     print(f"b_{i}({input})={bin_value}, v_{i}({input}) = {v_value}")
                 if math.isinf(sketch[bin_value]):
                     c += 1
                 sketch[bin_value] = min(sketch[bin_value], v_value)
-                # if print_:
-                #     print(sketch)
             if c == sketch_length:
                 return sketch
         return sketch
 
     def get_hash_values(self, input):
+        """
+        Generate hash values for an input using either mixed tabulation or regular hashing.
+        
+        Args:
+            input: Input value to be hashed
+            
+        Returns:
+            dict: Contains 'bins' and 'values' arrays of hash outputs
+        """
         hash_value = self.hashfunc(input.encode("utf-8"))
         if self.mixed_tab:
             bins = np.empty(shape=self.sketch_length)
@@ -89,16 +115,6 @@ class FillSketch(object):
             values = np.empty(shape=self.sketch_length * 2)
             for i in range(self.sketch_length * 2):
                 values[i] = self.mixedtab_object[1].get_hash(x=hash_value, i=i) / (2**32 - 1)
-            # print(bins)
-            # print(values)
-            # print(intermediate)
-            # intermediate_copy = intermediate.astype('int64')
-            # print(intermediate)
-            # # bins = np.bitwise_and(intermediate, self.sketch_length - 1)
-            # bins = intermediate % self.sketch_length
-            # print(bins)
-            # values = intermediate_copy / _mersenne_prime
-            # print(values)
         else:
             a, b = self._init_permutations(self.sketch_length)
             intermediate = (a * hash_value + b) % _mersenne_prime
@@ -121,6 +137,15 @@ class FillSketch(object):
         ).T
 
     def jaccard(self, other_fillsketch):
+        """
+        Compute estimated Jaccard similarity between this sketch and another.
+        
+        Args:
+            other_fillsketch (FillSketch): Another FillSketch to compare with
+            
+        Returns:
+            float: Estimated Jaccard similarity between 0 and 1
+        """
         return float(np.sum(self.hashvalues == other_fillsketch.hashvalues) / np.shape(self.hashvalues))
 
     def __len__(self):

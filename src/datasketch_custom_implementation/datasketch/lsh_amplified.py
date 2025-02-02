@@ -1,3 +1,9 @@
+"""
+Amplified LSH implementation that extends the basic LSH algorithm in datasketch.
+This implementation uses a two-stage hashing approach to improve accuracy, especially
+for high similarity thresholds.
+"""
+
 import pickle
 import struct
 from collections import defaultdict
@@ -115,45 +121,22 @@ def _optimal_param_new(threshold, num_perm, false_positive_weight, false_negativ
 
 class MinHashLSHAmplified(object):
     """
-    The :ref:`minhash_lsh` index.
-    It supports query with `Jaccard similarity`_ threshold.
-    Reference: `Chapter 3, Mining of Massive Datasets
-    <http://www.mmds.org/>`_.
-
+    Amplified version of MinHash LSH that uses two-stage hashing.
+    
     Args:
-        threshold (float): The Jaccard similarity threshold between 0.0 and
-            1.0. The initialized MinHash LSH will be optimized for the threshold by
-            minizing the false positive and false negative.
-        num_perm (int, optional): The number of permutation functions used
-            by the MinHash to be indexed. For weighted MinHash, this
-            is the sample size (`sample_size`).
-        weights (tuple, optional): Used to adjust the relative importance of
-            minimizing false positive and false negative when optimizing
-            for the Jaccard similarity threshold.
-            `weights` is a tuple in the format of
-            :code:`(false_positive_weight, false_negative_weight)`.
-        params (tuple, optional): The LSH parameters (i.e., number of bands and size
-            of each bands). This is used to bypass the parameter optimization
-            step in the constructor. `threshold` and `weights` will be ignored
-            if this is given.
-        storage_config (dict, optional): Type of storage service to use for storing
-            hashtables and keys.
-            `basename` is an optional property whose value will be used as the prefix to
-            stored keys. If this is not set, a random string will be generated instead. If you
-            set this, you will be responsible for ensuring there are no key collisions.
-        prepickle (bool, optional): If True, all keys are pickled to bytes before
-            insertion. If None, a default value is chosen based on the
-            `storage_config`.
-        hashfunc (function, optional): If a hash function is provided it will be used to
-            compress the index keys to reduce the memory footprint. This could cause a higher
-            false positive rate.
-
-    Note:
-        `weights` must sum to 1.0, and the format is
-        (false positive weight, false negative weight).
-        For example, if minimizing false negative (or maintaining high recall) is more
-        important, assign more weight toward false negative: weights=(0.4, 0.6).
-        Try to live with a small difference between weights (i.e. < 0.5).
+        threshold (float): Jaccard similarity threshold between 0.0 and 1.0
+        num_perm (int, optional): Number of permutation functions. Defaults to 128.
+        weights (tuple, optional): Weights for false positive/negative optimization
+        amplified (bool): Whether to use amplified hashing
+        params (tuple, optional): Manual LSH parameters (b1,b2,r1,r2)
+        storage_config (dict, optional): Storage configuration
+        
+    Attributes:
+        threshold: Similarity threshold
+        num_perm: Number of permutations
+        b: Band parameters (b1,b2)
+        r: Row parameters (r1,r2) 
+        hashtables: The LSH hash tables
     """
 
     def __init__(
@@ -509,6 +492,15 @@ class MinHashLSHAmplified(object):
         return candidate_pairs
 
     def plot_probability_function(self, step=0.001, plot_threshold=True, plot_fp=True, plot_fn=True):
+        """
+        Plot the S-curve showing probability of candidate pair formation.
+        
+        Args:
+            step (float): Step size for x-axis
+            plot_threshold (bool): Whether to show threshold line
+            plot_fp (bool): Whether to show false positive region
+            plot_fn (bool): Whether to show false negative region
+        """
         # define function
         _probability = lambda s: 1 - (
             1 - (1 - (1 - s ** float(self.r[0])) ** float(self.b[0])) ** float(self.r[1])

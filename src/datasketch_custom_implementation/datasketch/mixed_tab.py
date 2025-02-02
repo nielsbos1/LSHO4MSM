@@ -1,3 +1,11 @@
+"""
+Mixed tabulation hashing implementation to provide faster hashing compared to
+traditional methods. This extends the hashing options available in datasketch.
+
+Mixed tabulation provides fast hashing while maintaining good theoretical
+properties for LSH applications.
+"""
+
 import os
 
 os.add_dll_directory("C:\\msys64\\mingw64\\bin")
@@ -5,10 +13,29 @@ from . import pyMixedTabulation
 
 
 class MixedTabulation(object):
+    """
+    Mixed tabulation hashing implementation.
+    
+    Args:
+        seed (int, optional): Seed for random number generation. Defaults to 1.
+        
+    Attributes:
+        mixed_tab_object: The underlying mixed tabulation implementation
+    """
     def __init__(self, seed=1):
         self.mixed_tab_object = pyMixedTabulation.PyMixTab(seed)
 
     def _create_64_bit_from_x_and_i(self, x, i):
+        """
+        Create 64-bit integer by combining two 32-bit values.
+        
+        Args:
+            x (int): First 32-bit value
+            i (int): Second 32-bit value
+            
+        Returns:
+            int: Combined 64-bit value
+        """
         bin_x = bin(x)
         bin_i = bin(i)
 
@@ -28,36 +55,15 @@ class MixedTabulation(object):
 
     def get_hash(self, x, i):
         """
-        x should be smaller than max_32_bit integer
-        i should be smaller than max_32_bit integer
+        Get hash value using mixed tabulation.
+        
+        Args:
+            x (int): Value to hash (must be 32-bit)
+            i (int): Index for hash function (must be 32-bit)
+            
+        Returns:
+            int: Hash value
         """
         key_64_bit = self._create_64_bit_from_x_and_i(x, i)
         hash = self.mixed_tab_object.getHash(key_64_bit)
         return hash
-
-
-if __name__ == "__main__":
-    mixtab = MixedTabulation(4)
-    x = 5
-    list_hashes_1 = []
-    for i in range(1024):
-        hash = mixtab.get_hash(x=7, i=i)
-        list_hashes_1.append(hash)
-
-    list_hashes_2 = []
-    for i in range(1024):
-        hash = mixtab.get_hash(x=7, i=i)
-        list_hashes_2.append(hash)
-
-    print(list_hashes_1 == list_hashes_2)
-
-    import pandas as pd
-
-    pd_hashes = pd.Series(list_hashes_1)
-
-    pd_unique = pd_hashes.unique()
-
-    even_list = []
-    for el in list_hashes_1:
-        if el % 2 == 0:
-            even_list.append(el)
