@@ -3,7 +3,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.10.6-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Code for Locality Sensitive Hashing Optimization for MSM
+Code for Locality Sensitive Hashing Optimization for Multi-component Similarity Method (LSHO4MSM)
 
 ## Project overview
 
